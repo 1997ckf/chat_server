@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  chat_server_test:
+    container_name: chat_server_test
+    image: chat_server
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+    - ./bin/:/app/bin/
+    - ./lib/:/app/lib/
+    - ./migrations/:/app/migrations/
+    - ./test/:/app/test/
+    - ./public/:/app/public/      
+    command: sh -c "pub run test"
+
+  database_test:
+    container_name: postgres_database_test
+    image: postgres:11
+    environment:
+      - POSTGRES_PASSWORD=dart
+      - POSTGRES_USER=dart
+      - POSTGRES_DB=dart_test

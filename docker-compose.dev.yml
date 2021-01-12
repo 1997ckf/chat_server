@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  chat_server:
+    container_name: chat_server
+    image: chat_server
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+    - ./bin/:/app/bin/
+    - ./lib/:/app/lib/
+    - ./migrations/:/app/migrations/
+    - ./test/:/app/test/
+    - ./public/:/app/public/
+    ports:
+      - 8888:8888
+    command: 
+      sh -c "pub run aqueduct db upgrade --connect postgres://admin:password@database:5432/database_chat ;
+             pub run aqueduct auth add-client --id com.1997ckf.chat_server --secret myspecialsecret --connect postgres://admin:password@database:5432/database_chat ;
+             pub run aqueduct serve"
+
+  database:
+    image: postgres:11
+    container_name: postgres_database
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=database_chat
+    ports:
+      - 65432:5432 # If you want to expose the db from the container
+    volumes:
+      - db_data_chat:/var/lib/postgresql/data
+
+volumes:
+  db_data_chat:

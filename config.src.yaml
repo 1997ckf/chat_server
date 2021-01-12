@@ -1,0 +1,6 @@
+database:
+  host: database_test
+  port: 5432
+  username: dart
+  password: dart
+  databaseName: dart_test

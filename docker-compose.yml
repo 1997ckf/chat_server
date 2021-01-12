@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  chat-server:
+    container_name: chat-server
+    image: 1997ckf.azurecr.io/chat_server
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 80:80
+    command: 
+      sh -c "pub run aqueduct db upgrade --connect postgres://admin:password@database:5432/database_chat ;
+             pub run aqueduct auth add-client --id com.1997ckf.chat_server --secret myspecialsecret --connect postgres://admin:password@database:5432/database_chat ;
+             pub run aqueduct serve --port 80"
+
+  database:
+    image: postgres:11
+    container_name: postgres-database
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=database_chat

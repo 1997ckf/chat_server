@@ -1,0 +1,74 @@
+jobs:
+  # run test
+  test:
+    docker:
+      # specify the version
+      - image: google/dart:2.7
+
+      - image: circleci/postgres:11
+        name: database_test
+        environment:
+          POSTGRES_PASSWORD: dart
+          POSTGRES_USER: dart
+          POSTGRES_DB: dart_test
+
+    working_directory: /dart/src/github.com/1997ckf/chat_server
+    steps:
+      - checkout
+      - run:
+          name: Get dependencies
+          command: pub get
+      - run:
+          name: Run test
+          command: pub run test  
+  # login to azure -> build image -> push to Azure Container Registry
+  push-to-azure:
+    docker:
+      - image: cimg/base:2020.12
+    steps:
+      - checkout
+      - azure-cli/install
+      - azure-cli/login-with-service-principal:
+          azure-sp: ServicePrincipal
+          azure-sp-password: Password
+          azure-sp-tenant: TenantID
+      - setup_remote_docker:
+          version: 19.03.13
+      - run:
+          command: curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
+          name: install Docker Compose-ACI CLI           
+      - run:
+          command: az acr login --name 1997ckf 
+          name: Login to Azure Container Registry
+      - run:
+          command: docker-compose build
+          name: Build docker image
+      - run:
+          command: docker-compose push
+          name: Push to Azure Container Registry          
+      - run:
+          command: docker login azure --client-id ${AppID} --client-secret ${Password} --tenant-id ${TenantID}
+          name: Docker Log into Azure
+      - run:
+          command: docker context create aci myacicontext --resource-group myResourceGroup
+          name: Create context
+      - run:
+          command: docker context use myacicontext
+          name: Change context
+      - run:
+          command: docker compose up
+          name: Deploy to Azure container instance
+
+orbs:
+  azure-cli: circleci/azure-cli@1.0.0
+version: 2.1
+workflows:
+  test-build-push:
+    jobs:
+      - test
+      - push-to-azure:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
